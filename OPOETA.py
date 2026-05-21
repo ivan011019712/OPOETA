@@ -242,21 +242,38 @@ def getMatETA(tb,addday=1,pattern=r"(?:\d{1,2}/\d{1,2}\*)?\d+"):
             strD=getMEDate(result[0][0:result[0].index('*')],ETA_ADDDATE)
             return strD+'*'+result[0][result[0].index('*')+1:100]
         
-    elif(len(result)==4):
-        if('*' in result[0]):
-            if('*' in result[2]):
-                #strD=str(date.today().year)+'/'+result[0][0:result[0].index('*')]
-                strD=getMEDate(result[0][0:result[0].index('*')],ETA_ADDDATE)   
-                #tmp=(datetime.strptime(strD,"%Y/%m/%d")+ timedelta(days=addday)).strftime('%Y/%m/%d')+'*'+result[1]
-                tmp=strD+'*'+result[1]
-                del result[0:2]  
-                #strD=str(date.today().year)+'/'+result[0][0:result[0].index('*')]
-                strD=getMEDate(result[0][0:result[0].index('*')],ETA_ADDDATE)   
-                #print(44,tmp+','+(datetime.strptime(strD,"%Y/%m/%d")+ timedelta(days=10)).strftime('%Y/%m/%d')+'*'+result[1])
-                return tmp+','+strD+'*'+result[1]
+    # elif(len(result)==4):
+    #     if('*' in result[0]):
+    #         if('*' in result[2]):
+    #             #strD=str(date.today().year)+'/'+result[0][0:result[0].index('*')]
+    #             strD=getMEDate(result[0][0:result[0].index('*')],ETA_ADDDATE)   
+    #             #tmp=(datetime.strptime(strD,"%Y/%m/%d")+ timedelta(days=addday)).strftime('%Y/%m/%d')+'*'+result[1]
+    #             tmp=strD+'*'+result[1]
+    #             del result[0:2]  
+    #             #strD=str(date.today().year)+'/'+result[0][0:result[0].index('*')]
+    #             strD=getMEDate(result[0][0:result[0].index('*')],ETA_ADDDATE)   
+    #             #print(44,tmp+','+(datetime.strptime(strD,"%Y/%m/%d")+ timedelta(days=10)).strftime('%Y/%m/%d')+'*'+result[1])
+    #             return tmp+','+strD+'*'+result[1]
+
+    elif(len(result)==4): #### Multilpe ETA Date
+      tmp=''
+      if(('*' in result[0]) and ('*' in result[1])  and ('*' in result[2])  and ('*' in result[3])):
+          for i in result:              
+              strD=getMEDate(i[0:i.index('*')],ETA_ADDDATE)             
+              tmp=tmp+strD+'*'+i[i.index('*')+1:10]+','
+          return tmp
+          
+    elif(len(result)==5):  #### Multilpe ETA Date
+      tmp=''
+      if(('*' in result[0]) and ('*' in result[1])  and ('*' in result[2])  and ('*' in result[3])  and ('*' in result[4])):
+          for i in result:              
+              strD=getMEDate(i[0:i.index('*')],ETA_ADDDATE)              
+              tmp=tmp+strD+'*'+i[i.index('*')+1:10]+','
+          return tmp
     else:
         return '-'
-########################################################################################################################        
+########################################################################################################################      
+
 print('Step 2 Functions OK')
 # qq=arrDf[arrDf['mat']=='6033B0123901']
 # # # print(qq[['MaterialETA']])
@@ -348,17 +365,21 @@ arrDf.loc[(arrDf['Remark'].str.contains(r'无法接单',case=False,regex=True) &
 arrDf.loc[(arrDf['Remark'].str.contains(r'新机型',case=False,regex=True) & (arrDf['MaterialETA'].fillna('')=='')),'MaterialETA']='-'
 
 
-#5.Remark use 替代,加3天收料
-arrDf.loc[(arrDf['Remark'].str.contains(r'^use\s?替代(?:\d+[a-z]?\d+)?$',case=False, regex=True)) & (arrDf['MaterialETA'].fillna('')==''),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
-#6.Remark use 60xx,加3天收料
-arrDf.loc[(arrDf['Remark'].str.contains(r'^use\s?6',case=False, regex=True)) & (arrDf['MaterialETA'].fillna('')==''),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
-arrDf.loc[(arrDf['Remark'].str.contains(r'Use 替代',case=False, regex=True)) & (arrDf['Support']==0) & (arrDf['MaterialETA'].isnull()),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
+# #5.Remark use 替代,加3天收料
+# arrDf.loc[(arrDf['Remark'].str.contains(r'^use\s?替代(?:\d+[a-z]?\d+)?$',case=False, regex=True)) & (arrDf['MaterialETA'].fillna('')==''),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
+# #6.Remark use 60xx,加3天收料
+# arrDf.loc[(arrDf['Remark'].str.contains(r'^use\s?6',case=False, regex=True)) & (arrDf['MaterialETA'].fillna('')==''),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
+# arrDf.loc[(arrDf['Remark'].str.contains(r'Use 替代',case=False, regex=True)) & (arrDf['Support']==0) & (arrDf['MaterialETA'].isnull()),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 
 
 #6.自领 
 arrDf.loc[arrDf['Remark'].str.contains(r'自领',case=False, regex=True)==True,'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 
-
+# USE Sxx/FA/NORMAL/SA
+arrDf.loc[arrDf['Remark'].str.contains(r'USE SW',case=False, regex=True)==True,'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
+arrDf.loc[arrDf['Remark'].str.contains(r'USE FA',case=False, regex=True)==True,'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
+arrDf.loc[arrDf['Remark'].str.contains(r'USE NORMAL',case=False, regex=True)==True,'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
+arrDf.loc[arrDf['Remark'].str.contains(r'USE SA',case=False, regex=True)==True,'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 
 #arrDf[arrDf['mat']=='6017B2254301']
 print('Step 3 OK')
@@ -374,6 +395,21 @@ WK_pn=r'WK\d{1,2}/\d{1,2}\*\d+' ##WK*Qty
 tt=arrDf[(arrDf['Remark'].str.contains(WK_pn,na=False,regex=True)) & (arrDf['MaterialETA'].fillna('')=='')]
 ETAdf2=getMEdf(tt,ETA_ADDDATE,WK_pn)
 arrDf.loc[(arrDf['Remark'].str.contains(WK_pn, na=False, regex=True)) & (arrDf['MaterialETA'].fillna('')==''),'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
+######################################################################################
+
+as_pn=r"(?:\d{1,2}/\d{1,2}\*)?\d+"
+###入料分###################################################################################
+tt=arrDf[arrDf['Remark'].str.contains(r'入料分',na=False,regex=True) & (arrDf['MaterialETA'].fillna('')=='') ]#[['mat','Remark']]
+ETAdf2=getMEdf(tt,ETA_ADDDATE,as_pn)
+arrDf.loc[arrDf['Remark'].str.contains(r'入料分', na=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='') ,'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
+######################################################################################
+
+###入料後分###################################################################################
+tt=arrDf[arrDf['Remark'].str.contains(r'(入料)(後分)',na=False,regex=True) & (arrDf['MaterialETA'].fillna('')=='') ]#[['mat','Remark']]
+#tt=arrDf[arrDf['Remark'].str.extract(f"({r'(入料)(後分)'})",flags=2)[0]]#[['mat','Remark']]
+ETAdf2=getMEdf(tt,ETA_ADDDATE,pn)
+arrDf.loc[arrDf['Remark'].str.contains(r'(入料)(後分)', na=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='') ,'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
+#arrDf.loc[arrDf['Remark'].str.extract(f"({r'(入料)(後分)'})",flags=2)[0],'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
 ######################################################################################
 
 
@@ -420,20 +456,7 @@ ETAdf2=getMEdf(tt,ETA_ADDDATE,pn)
 arrDf.loc[arrDf['Remark'].str.contains(r'預計', na=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='') ,'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
 ######################################################################################
 
-as_pn=r"(?:\d{1,2}/\d{1,2}\*)?\d+"
-###入料分###################################################################################
-tt=arrDf[arrDf['Remark'].str.contains(r'入料分',na=False,regex=True) & (arrDf['MaterialETA'].fillna('')=='') ]#[['mat','Remark']]
-ETAdf2=getMEdf(tt,ETA_ADDDATE,as_pn)
-arrDf.loc[arrDf['Remark'].str.contains(r'入料分', na=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='') ,'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
-######################################################################################
 
-###入料後分###################################################################################
-tt=arrDf[arrDf['Remark'].str.contains(r'(入料)(後分)',na=False,regex=True) & (arrDf['MaterialETA'].fillna('')=='') ]#[['mat','Remark']]
-#tt=arrDf[arrDf['Remark'].str.extract(f"({r'(入料)(後分)'})",flags=2)[0]]#[['mat','Remark']]
-ETAdf2=getMEdf(tt,ETA_ADDDATE,pn)
-arrDf.loc[arrDf['Remark'].str.contains(r'(入料)(後分)', na=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='') ,'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
-#arrDf.loc[arrDf['Remark'].str.extract(f"({r'(入料)(後分)'})",flags=2)[0],'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
-######################################################################################
 
 ETA_pn=r'ETA\s?(\d{1,2}/\d{1,2})'
 ###ETA###################################################################################
@@ -557,7 +580,7 @@ finalDf.update(lookup) # 這一步才會把 FMTA 的值填進去
 finalDf = finalDf.reset_index()
 #finalDf
 #gi_pn=r'(?:\(\w*\))?(#\w*),?(?:.*)?'
-gi_pn=r'#([^,]+)'
+gi_pn=r'#([^,;]+)'
 #if(re.findall(gi_pn,finalDf['Remark']))!=''
 #finalDf['FRK']=finalDf.loc[finalDf['Remark'].str.contains(gi_pn,case=False,regex=True),'Remark']['Remark'].str.extract(gi_pn)+','+finalDf['FRK'].astype(str)
 # 1. 先提取匹配的內容 (假設 gi_pn 是你的正規表示式變數)
@@ -580,6 +603,12 @@ finalDf['FRK'] = finalDf['FRK'].str.lstrip(',')
 finalDf['FRK'] = finalDf['FRK'].str.lstrip('-')
 finalDf['FRK'] = finalDf['FRK'].str.lstrip('-')
 finalDf['FRK'] = finalDf['FRK'].fillna('')
+
+finalDf['FMTA'] = finalDf['FMTA'].str.strip(',')
+finalDf['FMTA'] = finalDf['FMTA'].str.lstrip(',')
+finalDf['FMTA'] = finalDf['FMTA'].str.lstrip('-')
+finalDf['FMTA'] = finalDf['FMTA'].str.lstrip('-')
+finalDf['FMTA'] = finalDf['FMTA'].fillna('')
 
 #############################################################################
 
