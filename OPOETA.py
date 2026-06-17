@@ -177,6 +177,8 @@ def getMEdf(df,addday=1,pn=r"(?:\d{1,2}/\d{1,2}\*)?\d+"):
 def getMatETA(tb,addday=1,pattern=r"(?:\d{1,2}/\d{1,2}\*)?\d+"): 
     #pattern = r"(?:\d{1,2}/\d{1,2}\*)?\d+"
     result=re.findall(pattern,tb)
+    if type(result[0])==tuple:
+        result=list(result[0])
     # print(result)
     if(len(result)==1):   #####(yyyy/mm/dd*qty)      
         if('WK' in result[0]): #####(WKmm/yy*qty)
@@ -293,6 +295,9 @@ arrDf['Remark']=arrDf['Remark'].str.replace(r'(\d{1,2}/\d{1,2});(\d+)',r'\1*\2',
 #0 blank and Support=0
 arrDf.loc[(arrDf['Remark']=='') & (arrDf['Support']==0),'MaterialETA']='Unknown'
 
+# 量产无需求
+arrDf.loc[arrDf['Remark'].str.contains('量产无需求', na=False, regex=True),'MaterialETA']='量产无需求'#arrDf.loc[arrDf['Remark'].str.contains('量产无需求', na=False, regex=True),'MaterialETA']='-'
+
 # '无法分'
 arrDf.loc[arrDf['Remark'].str.contains('无法分', na=False, regex=True),'MaterialETA']='無法分'
 
@@ -303,19 +308,23 @@ arrDf.loc[arrDf['Support']>0,'MaterialETA']=getMEDate(td,NORMAL_USE_ADDDATE)+"*"
 arrDf.loc[(arrDf['Remark'].str.contains(r'BS',case=False,regex=True)) & (arrDf['Support']==0),'MaterialETA']='-'
 
 
-# 量产无需求
-arrDf.loc[arrDf['Remark'].str.contains('量产无需求', na=False, regex=True),'MaterialETA']='量产无需求'#arrDf.loc[arrDf['Remark'].str.contains('量产无需求', na=False, regex=True),'MaterialETA']='-'
-
 # 产线叫料 & Support==0 --> 加 3 天
 arrDf.loc[(arrDf['Remark']=='產線叫料') & (arrDf['Support']==0),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 arrDf.loc[(arrDf['Remark']=='产线叫料') & (arrDf['Support']==0),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 
 # 用其他60代用。
-arrDf.loc[(arrDf['Remark'].str.contains(r'^6.{10}\d{1}$',case=False, regex=True)) & (arrDf['Support']==0),'MaterialETA']=getMEDate(td,NORMAL_USE_ADDDATE)+"*"+arrDf['STotal'].astype(str)
+# arrDf.loc[(arrDf['Remark'].str.contains(r'^6.{10}\d{1}$',case=False, regex=True)) & (arrDf['Support']==0),'MaterialETA']=getMEDate(td,NORMAL_USE_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 
 # 量产不足分料，待交期
 arrDf.loc[(arrDf['Remark'].str.contains(r'量产不足分料，待交期',case=False, regex=True)==True) & (arrDf['Support']==0),'MaterialETA']='待交期'
 #arrDf[(arrDf['Remark'].str.contains(r'量产不足分料，待交期',case=False)==True) & (arrDf['Support']==0)]
+
+# LTB
+arrDf.loc[(arrDf['Remark'].str.contains(r'LTB',case=False, regex=True)==True) & (arrDf['Support']==0),'MaterialETA']='LTB'
+
+# 后确定分料状况
+arrDf.loc[(arrDf['Remark'].str.contains(r'后确定分料状况',case=False, regex=True)==True) & (arrDf['Support']==0),'MaterialETA']='后确定分料状况'
+
 
 # 厂商
 arrDf.loc[(arrDf['Remark'].str.contains(r'厂商',case=False, regex=True)) & (arrDf['Support']==0),'MaterialETA']='廠商'
@@ -371,9 +380,9 @@ arrDf.loc[(arrDf['Remark'].str.contains(r'新机型',case=False,regex=True) & (a
 # arrDf.loc[(arrDf['Remark'].str.contains(r'^use\s?6',case=False, regex=True)) & (arrDf['MaterialETA'].fillna('')==''),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 # arrDf.loc[(arrDf['Remark'].str.contains(r'Use 替代',case=False, regex=True)) & (arrDf['Support']==0) & (arrDf['MaterialETA'].isnull()),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 
+#自领 
+arrDf.loc[(arrDf['Remark'].str.contains(r'自领',case=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='')),'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 
-#6.自领 
-arrDf.loc[arrDf['Remark'].str.contains(r'自领',case=False, regex=True)==True,'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
 
 # USE Sxx/FA/NORMAL/SA
 arrDf.loc[arrDf['Remark'].str.contains(r'USE SW',case=False, regex=True)==True,'MaterialETA']=getMEDate(td,ETA_ADDDATE)+"*"+arrDf['STotal'].astype(str)
@@ -404,14 +413,14 @@ ETAdf2=getMEdf(tt,ETA_ADDDATE,as_pn)
 arrDf.loc[arrDf['Remark'].str.contains(r'入料分', na=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='') ,'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
 ######################################################################################
 
+asf_pn=r"(\d+/\d+)入料後分(\d+)"
 ###入料後分###################################################################################
 tt=arrDf[arrDf['Remark'].str.contains(r'(入料)(後分)',na=False,regex=True) & (arrDf['MaterialETA'].fillna('')=='') ]#[['mat','Remark']]
 #tt=arrDf[arrDf['Remark'].str.extract(f"({r'(入料)(後分)'})",flags=2)[0]]#[['mat','Remark']]
-ETAdf2=getMEdf(tt,ETA_ADDDATE,pn)
+ETAdf2=getMEdf(tt,ETA_ADDDATE,asf_pn)
 arrDf.loc[arrDf['Remark'].str.contains(r'(入料)(後分)', na=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='') ,'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
 #arrDf.loc[arrDf['Remark'].str.extract(f"({r'(入料)(後分)'})",flags=2)[0],'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
 ######################################################################################
-
 
 # 剩餘 WKmm/dd打板 --> '-'
 arrDf.loc[(arrDf['Remark'].str.contains(r'WK\d{1,2}/\d{1,2}打板',case=False,regex=True) & (arrDf['MaterialETA'].fillna('')=='')),'MaterialETA']='-'
