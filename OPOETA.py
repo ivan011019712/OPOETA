@@ -415,10 +415,10 @@ arrDf.loc[arrDf['Remark'].str.contains(r'入料分', na=False, regex=True) & (ar
 
 asf_pn=r"(\d+/\d+)入料後分(\d+)"
 ###入料後分###################################################################################
-tt=arrDf[arrDf['Remark'].str.contains(r'(入料)(後分)',na=False,regex=True) & (arrDf['MaterialETA'].fillna('')=='') ]#[['mat','Remark']]
+tt=arrDf[arrDf['Remark'].str.contains(asf_pn,na=False,regex=True) & (arrDf['MaterialETA'].fillna('')=='') ]#[['mat','Remark']]
 #tt=arrDf[arrDf['Remark'].str.extract(f"({r'(入料)(後分)'})",flags=2)[0]]#[['mat','Remark']]
 ETAdf2=getMEdf(tt,ETA_ADDDATE,asf_pn)
-arrDf.loc[arrDf['Remark'].str.contains(r'(入料)(後分)', na=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='') ,'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
+arrDf.loc[arrDf['Remark'].str.contains(asf_pn, na=False, regex=True) & (arrDf['MaterialETA'].fillna('')=='') ,'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
 #arrDf.loc[arrDf['Remark'].str.extract(f"({r'(入料)(後分)'})",flags=2)[0],'MaterialETA'] = arrDf['mat'].map(ETAdf2.set_index('mat')['MaterialETA'])
 ######################################################################################
 
